@@ -2,6 +2,14 @@
 
 (◍•ᴗ•◍)
 
+## Install
+
+```sh
+git clone https://github.com/samlior/framework
+cd framework
+npm install
+```
+
 ## Build
 
 ```sh
