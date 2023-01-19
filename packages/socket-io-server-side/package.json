@@ -4,6 +4,7 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc --build tsconfig.json",
+    "test:siss": "mocha -r ts-node/register test/**/*.test.ts",
     "test": "echo \"no test cases\""
   },
   "author": "samlior",
