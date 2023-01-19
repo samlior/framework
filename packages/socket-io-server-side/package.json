@@ -7,6 +7,7 @@
     "test:siss": "mocha -r ts-node/register test/**/*.test.ts",
     "test": "echo \"no test cases\""
   },
+  "repository": "https://github.com/samlior/framework",
   "author": "samlior",
   "license": "GPL-3.0-or-later",
   "devDependencies": {

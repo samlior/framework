@@ -7,6 +7,7 @@
     "test": "echo \"please see @samlior/http-server\"",
     "echo": "ts-node scripts/echo.ts"
   },
+  "repository": "https://github.com/samlior/framework",
   "author": "samlior",
   "license": "GPL-3.0-or-later",
   "dependencies": {

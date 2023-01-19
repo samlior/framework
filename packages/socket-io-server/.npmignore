@@ -1,1 +1,5 @@
+src
+scripts
+test
+tsconfig.json
 *.tsbuildinfo

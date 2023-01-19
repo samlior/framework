@@ -6,6 +6,7 @@
     "build": "tsc --build tsconfig.json",
     "test": "echo \"no test cases\""
   },
+  "repository": "https://github.com/samlior/framework",
   "author": "samlior",
   "license": "GPL-3.0-or-later",
   "dependencies": {
