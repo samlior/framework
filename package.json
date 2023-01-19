@@ -1,0 +1,16 @@
+{
+  "name": "root",
+  "description": "@samlior/framework monorepo",
+  "workspaces": [
+    "packages/*"
+  ],
+  "engines": {
+    "npm": ">=8"
+  },
+  "scripts": {
+    "clear": "rimraf ./node_modules packages/**/node_modules && npm run clear:build",
+    "clear:build": "rimraf packages/**/dist packages/**/*.tsbuildinfo"
+  },
+  "author": "samlior",
+  "license": "GPL-3.0-or-later"
+}
