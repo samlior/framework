@@ -43,6 +43,9 @@ describe("SocketIO Server", function () {
     // 注册 handler
     this.server.register("echo", new MockEchoHandler());
 
+    this.manager = new SocketIOClientManager();
+    this.manager.register("clientEcho", new MockClientEchoHandler());
+
     // TODO: ugly
     server.server.of("/").on("connection", (socket) => {
       socket.disconnect(true);
@@ -54,7 +57,7 @@ describe("SocketIO Server", function () {
   });
 
   it("should echo succeed", async function () {
-    const client = await SocketIOClientManager.connect(
+    const client = await this.manager.connect(
       `ws://127.0.0.1:${port}${namespace}`
     );
     expect(await client.request("echo", "wuhu")).be.eq("wuhu");
@@ -62,26 +65,22 @@ describe("SocketIO Server", function () {
   });
 
   it("should echo succeed(client)", async function () {
-    SocketIOClientManager.register("clientEcho", new MockClientEchoHandler());
-    const client = await SocketIOClientManager.connect(
+    const client = await this.manager.connect(
       `ws://127.0.0.1:${port}${namespace}`
     );
     await new Promise<void>((r) => setTimeout(r, 100));
     const serverSideClient = (this.server as SocketIOServer).clients.get(
       client.id
     );
-    try {
-      expect(serverSideClient !== undefined).be.true;
-      expect(await serverSideClient!.request("clientEcho", "wuhu")).be.eq(
-        "from client wuhu"
-      );
-    } finally {
-      client.socket.disconnect(true);
-    }
+    expect(serverSideClient !== undefined).be.true;
+    expect(await serverSideClient!.request("clientEcho", "wuhu")).be.eq(
+      "from client wuhu"
+    );
+    client.socket.disconnect(true);
   });
 
   it("should echo failed(invalid params)", async function () {
-    const client = await SocketIOClientManager.connect(
+    const client = await this.manager.connect(
       `ws://127.0.0.1:${port}${namespace}`
     );
     let err = false;
@@ -96,9 +95,7 @@ describe("SocketIO Server", function () {
   });
 
   it("should echo failed(namespace)", async function () {
-    const client = await SocketIOClientManager.connect(
-      `ws://127.0.0.1:${port}`
-    );
+    const client = await this.manager.connect(`ws://127.0.0.1:${port}`);
     let err = false;
     try {
       await client.request("echo", "wuhu", 100);
@@ -116,7 +113,7 @@ describe("SocketIO Server", function () {
     (this.httpServer as http.Server).on("connection", (_socket) => {
       socket = _socket;
     });
-    const client = await SocketIOClientManager.connect(
+    const client = await this.manager.connect(
       `ws://127.0.0.1:${port}${namespace}`,
       {
         reconnectionDelay: 100,

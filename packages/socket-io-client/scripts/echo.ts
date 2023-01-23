@@ -1,13 +1,11 @@
-import { SocketIOClient } from "../src";
+import { SocketIOClientManager } from "../src";
 
 async function main() {
-  const client = await SocketIOClient.connect(
-    "ws://127.0.0.1:65432/namespace",
-    {
-      reconnectionDelay: 100,
-      reconnectionDelayMax: 500,
-    }
-  );
+  const manager = new SocketIOClientManager();
+  const client = await manager.connect("ws://127.0.0.1:65432/namespace", {
+    reconnectionDelay: 100,
+    reconnectionDelayMax: 500,
+  });
   let i = 0;
   while (true) {
     console.log("result:", await client.request("echo", `wuhu${i++}`, -1));

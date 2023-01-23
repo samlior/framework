@@ -2,11 +2,8 @@ import { io, ManagerOptions, SocketOptions } from "socket.io-client";
 import { SocketIOHandler, SocketIOHanlders } from "./types";
 import { SocketIOClient, SocketIOClientOptions } from "./client";
 
-export abstract class SocketIOClientManager {
-  static readonly handlers: SocketIOHanlders = new Map<
-    string,
-    SocketIOHandler
-  >();
+export class SocketIOClientManager {
+  readonly handlers: SocketIOHanlders = new Map<string, SocketIOHandler>();
 
   /**
    * 链接服务器
@@ -14,7 +11,7 @@ export abstract class SocketIOClientManager {
    * @param options - 构造参数和 socket 参数
    * @returns 客户端实例
    */
-  static async connect(
+  async connect(
     url: string,
     options?: Omit<SocketIOClientOptions, "socket"> &
       Partial<ManagerOptions & SocketOptions>
@@ -25,7 +22,7 @@ export abstract class SocketIOClientManager {
     });
     return new SocketIOClient({
       socket,
-      handlers: SocketIOClientManager.handlers,
+      handlers: this.handlers,
       ...options,
     });
   }
@@ -35,8 +32,8 @@ export abstract class SocketIOClientManager {
    * @param method - 方法名
    * @param handler - 处理器
    */
-  static register(method: string, handler: SocketIOHandler) {
-    SocketIOClientManager.handlers.set(method, handler);
+  register(method: string, handler: SocketIOHandler) {
+    this.handlers.set(method, handler);
   }
 
   /**
@@ -44,7 +41,7 @@ export abstract class SocketIOClientManager {
    * @param method - 方法名
    * @returns 是否注销成功
    */
-  static unregister(method: string) {
-    return SocketIOClientManager.handlers.delete(method);
+  unregister(method: string) {
+    return this.handlers.delete(method);
   }
 }
