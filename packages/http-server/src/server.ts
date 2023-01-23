@@ -7,6 +7,7 @@ import {
   JSONRPCErrorCode,
   Limited,
   Token,
+  limitedRun,
   toNoExcept,
   raceNoExcept,
   error,
@@ -41,23 +42,29 @@ export type HTTPHanlder = IHTTPHanlder | HTTPHandleFunc;
 
 export interface HTTPServerOptions {
   // 最大并发数量
-  maxTokens: number;
+  maxTokens?: number;
   // 最大队列数量
-  maxQueued: number;
+  maxQueued?: number;
+  // 并发控制器
+  limited?: Limited;
   // 父级调度器
   parent?: Scheduler;
 }
 
 export class HTTPServer {
   readonly scheduler: Scheduler;
-  readonly limited: Limited;
+  readonly limited?: Limited;
   readonly handlers = new Map<string, HTTPHanlder>();
 
   private _stopped: boolean = false;
 
-  constructor({ maxTokens, maxQueued, parent }: HTTPServerOptions) {
+  constructor({ maxTokens, maxQueued, limited, parent }: HTTPServerOptions) {
     this.scheduler = new Scheduler(parent);
-    this.limited = new Limited(maxTokens, maxQueued);
+    if (limited) {
+      this.limited = limited;
+    } else if (maxTokens !== undefined && maxQueued !== undefined) {
+      this.limited = new Limited(maxTokens, maxQueued);
+    }
   }
 
   /**
@@ -65,30 +72,6 @@ export class HTTPServer {
    */
   get stopped() {
     return this._stopped;
-  }
-
-  private async *limitedRun(
-    handle: () => ReturnTypeIs<any>
-  ): ReturnTypeIs<any> {
-    let token: Token;
-    const { request, getToken } = this.limited.get();
-    if (request) {
-      const { ok, error, result } = yield* raceNoExcept(toNoExcept(getToken));
-      if (!ok) {
-        result && this.limited.put(result);
-        this.limited.cancel(request);
-        throw error;
-      }
-      token = result;
-    } else {
-      token = await getToken;
-    }
-
-    try {
-      return yield* token.invoke2(handle());
-    } finally {
-      this.limited.put(token);
-    }
   }
 
   /**
@@ -126,7 +109,11 @@ export class HTTPServer {
    * 等待所有请求处理完毕
    */
   wait() {
-    return Promise.all([this.scheduler.wait(), this.limited.wait()]);
+    const promises: Promise<void>[] = [this.scheduler.wait()];
+    if (this.limited) {
+      promises.push(this.limited.wait());
+    }
+    return Promise.all(promises);
   }
 
   /**
@@ -165,7 +152,7 @@ export class HTTPServer {
    */
   checkIfAvailable() {
     return (req: Request, res: Response, next: (err?: any) => void) => {
-      if (this.limited.available === 0) {
+      if (this.limited && this.limited.available === 0) {
         res.status(503).send();
         return next(new Error("unavailable"));
       }
@@ -219,7 +206,11 @@ export class HTTPServer {
 
       // 3. 开始调度
       scheduler
-        .exec(limited ? this.limitedRun(() => handle(params)) : handle(params))
+        .exec(
+          limited && this.limited
+            ? limitedRun(this.limited, () => handle(params))
+            : handle(params)
+        )
         .then((response) => {
           if (response instanceof HTTPHandlerResponse) {
             const { status, headers, result } = response;

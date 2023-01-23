@@ -1,4 +1,3 @@
-import { io, ManagerOptions, SocketOptions } from "socket.io-client";
 import {
   Scheduler,
   ReturnTypeIs,
@@ -9,6 +8,7 @@ import {
   JSONRPCRequest,
   JSONRPCNotify,
   Limited,
+  limitedRun,
   Token,
   debug,
   warn,
@@ -49,8 +49,10 @@ export class SocketIOHandlerResponse {
 
 export interface SocketIOClientOptions {
   socket: Socket;
-  handlers?: SocketIOHanlders;
+  maxTokens?: number;
+  maxQueued?: number;
   limited?: Limited;
+  handlers?: SocketIOHanlders;
   parent?: Scheduler;
 }
 
@@ -65,34 +67,26 @@ export declare interface SocketIOClient {
 export class SocketIOClient extends Events {
   readonly socket: Socket;
   readonly scheduler: Scheduler;
-  readonly limited: Limited;
+  readonly limited?: Limited;
   readonly handlers: SocketIOHanlders;
   readonly jsonrpc = new JSONRPC();
 
-  /**
-   * 链接服务器
-   * @param url - 服务器地址
-   * @param options - 构造参数和 socket 参数
-   * @returns 客户端实例
-   */
-  static async connect(
-    url: string,
-    options?: Omit<SocketIOClientOptions, "socket"> &
-      Partial<ManagerOptions & SocketOptions>
-  ) {
-    const socket = io(url, {
-      transports: ["websocket"],
-      ...options,
-    });
-    const client = new SocketIOClient({ socket, ...options });
-    return client;
-  }
-
-  constructor({ socket, limited, parent, handlers }: SocketIOClientOptions) {
+  constructor({
+    socket,
+    parent,
+    handlers,
+    maxTokens,
+    maxQueued,
+    limited,
+  }: SocketIOClientOptions) {
     super();
     this.socket = socket;
     this.scheduler = new Scheduler(parent);
-    this.limited = limited ?? new Limited(0, 0);
+    if (limited) {
+      this.limited = limited;
+    } else if (maxTokens !== undefined && maxQueued !== undefined) {
+      this.limited = new Limited(maxTokens, maxQueued);
+    }
     this.handlers = handlers ?? new Map<string, ISocketIOHandler>();
     this.start();
     this.socket.on("connect", this.handleConnect);
@@ -101,30 +95,6 @@ export class SocketIOClient extends Events {
 
   get id(): string {
     return this.socket.id;
-  }
-
-  private async *limitedRun(
-    handle: () => ReturnTypeIs<any>
-  ): ReturnTypeIs<any> {
-    let token: Token;
-    const { request, getToken } = this.limited.get();
-    if (request) {
-      const { ok, error, result } = yield* raceNoExcept(toNoExcept(getToken));
-      if (!ok) {
-        result && this.limited.put(result);
-        this.limited.cancel(request);
-        throw error;
-      }
-      token = result;
-    } else {
-      token = await getToken;
-    }
-
-    try {
-      return yield* token.invoke2(handle());
-    } finally {
-      this.limited.put(token);
-    }
   }
 
   private handleConnect = () => {
@@ -163,7 +133,7 @@ export class SocketIOClient extends Events {
     const { id, method, params } = requestOrNotify;
 
     // 2. 检查是否达到并发上限
-    if (this.limited.available === 0) {
+    if (this.limited && this.limited.available === 0) {
       id !== undefined &&
         this._jsonrpc(JSONRPC.formatJSONRPCError(JSONRPCErrorCode.Sever, id));
       return;
@@ -195,8 +165,8 @@ export class SocketIOClient extends Events {
     // 3. 开始调度
     scheduler
       .exec(
-        limited
-          ? this.limitedRun(() => handle(params, this))
+        limited && this.limited
+          ? limitedRun(this.limited, () => handle(params, this))
           : handle(params, this)
       )
       .then((response) => {
@@ -297,11 +267,14 @@ export class SocketIOClient extends Events {
    * 等待直到所有调用完成
    */
   wait() {
-    return Promise.all([
+    const promises: Promise<void>[] = [
       this.jsonrpc.wait(),
       this.scheduler.wait(),
-      this.limited.wait(),
-    ]);
+    ];
+    if (this.limited) {
+      promises.push(this.limited.wait());
+    }
+    return Promise.all(promises);
   }
 
   /**

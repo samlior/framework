@@ -1,3 +1,36 @@
+import { Limited, Token } from "./limited";
+import { ReturnTypeIs, raceNoExcept, toNoExcept } from "./scheduler";
+
+/**
+ * 受限的运行函数
+ * @param limited - 并发控制器
+ * @param handle - 执行函数
+ */
+export async function* limitedRun(
+  limited: Limited,
+  handle: () => ReturnTypeIs<any>
+) {
+  let token: Token;
+  const { request, getToken } = limited.get();
+  if (request) {
+    const { ok, error, result } = yield* raceNoExcept(toNoExcept(getToken));
+    if (!ok) {
+      result && limited.put(result);
+      limited.cancel(request);
+      throw error;
+    }
+    token = result;
+  } else {
+    token = await getToken;
+  }
+
+  try {
+    return yield* token.invoke2(handle());
+  } finally {
+    limited.put(token);
+  }
+}
+
 /**
  * Generate random integers according to the given range
  * @param min - Minimum limit

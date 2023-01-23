@@ -12,9 +12,11 @@ export interface SocketIOServerOptions {
   // socketIO 服务实例
   server: Server;
   // 最大并发数量
-  maxTokens: number;
+  maxTokens?: number;
   // 最大队列数量
-  maxQueued: number;
+  maxQueued?: number;
+  // 并发控制器
+  limited?: Limited;
   // 命名空间
   namespace?: string;
   // 父级调度器
@@ -25,7 +27,7 @@ export class SocketIOServer {
   readonly namespace: string;
   readonly scheduler: Scheduler;
   readonly server: Server;
-  readonly limited: Limited;
+  readonly limited?: Limited;
   readonly handlers = new Map<string, SocketIOHandler>();
   readonly clients = new Map<string, SocketIOClient>();
 
@@ -33,13 +35,18 @@ export class SocketIOServer {
     server,
     maxTokens,
     maxQueued,
+    limited,
     namespace,
     parent,
   }: SocketIOServerOptions) {
     this.namespace = namespace ?? defaultNamespace;
     this.server = server;
     this.scheduler = new Scheduler(parent);
-    this.limited = new Limited(maxTokens, maxQueued);
+    if (limited) {
+      this.limited = limited;
+    } else if (maxTokens !== undefined && maxQueued !== undefined) {
+      this.limited = new Limited(maxTokens, maxQueued);
+    }
     this.start();
   }
 
