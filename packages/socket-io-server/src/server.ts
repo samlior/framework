@@ -1,3 +1,4 @@
+import Events from "events";
 import { Server, Socket } from "socket.io";
 import { Scheduler, Limited, warn } from "@samlior/utils";
 import {
@@ -23,13 +24,21 @@ export interface SocketIOServerOptions {
   parent?: Scheduler;
 }
 
-export class SocketIOServer {
+export declare interface SocketIOServer<T = any> {
+  on(event: "connect", listener: (client: SocketIOClient<T>) => void): this;
+  on(event: "disconnect", listener: (client: SocketIOClient<T>) => void): this;
+
+  off(event: "connect", listener: (client: SocketIOClient<T>) => void): this;
+  off(event: "disconnect", listener: (client: SocketIOClient<T>) => void): this;
+}
+
+export class SocketIOServer<T = any> extends Events {
   readonly namespace: string;
   readonly scheduler: Scheduler;
   readonly server: Server;
   readonly limited?: Limited;
-  readonly handlers = new Map<string, SocketIOHandler>();
-  readonly clients = new Map<string, SocketIOClient>();
+  readonly handlers = new Map<string, SocketIOHandler<T>>();
+  readonly clients = new Map<string, SocketIOClient<T>>();
 
   constructor({
     server,
@@ -39,6 +48,7 @@ export class SocketIOServer {
     namespace,
     parent,
   }: SocketIOServerOptions) {
+    super();
     this.namespace = namespace ?? defaultNamespace;
     this.server = server;
     this.scheduler = new Scheduler(parent);
@@ -59,7 +69,7 @@ export class SocketIOServer {
       old.close();
     }
 
-    const client = new SocketIOClient({
+    const client = new SocketIOClient<T>({
       socket,
       limited: this.limited,
       parent: this.scheduler,
@@ -71,8 +81,14 @@ export class SocketIOServer {
         this.clients.delete(client.id);
       }
       client.off("disconnect", handleDisconnect);
+
+      // 发出断开事件
+      this.emit("disconnect", client);
     };
     client.on("disconnect", handleDisconnect);
+
+    // 发出链接事件
+    this.emit("connect", client);
   };
 
   /**
@@ -124,7 +140,7 @@ export class SocketIOServer {
    * @param method - 方法名
    * @param handler - 处理器
    */
-  register(method: string, handler: ISocketIOHandler) {
+  register(method: string, handler: ISocketIOHandler<T>) {
     this.handlers.set(method, handler);
   }
 

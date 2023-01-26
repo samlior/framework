@@ -2,8 +2,11 @@ import { io, ManagerOptions, SocketOptions } from "socket.io-client";
 import { SocketIOHandler, SocketIOHanlders } from "./types";
 import { SocketIOClient, SocketIOClientOptions } from "./client";
 
-export class SocketIOClientManager {
-  readonly handlers: SocketIOHanlders = new Map<string, SocketIOHandler>();
+export class SocketIOClientManager<T = any> {
+  readonly handlers: SocketIOHanlders<T> = new Map<
+    string,
+    SocketIOHandler<T>
+  >();
 
   /**
    * 链接服务器
@@ -13,14 +16,14 @@ export class SocketIOClientManager {
    */
   async connect(
     url: string,
-    options?: Omit<SocketIOClientOptions, "socket"> &
+    options?: Omit<SocketIOClientOptions<T>, "socket"> &
       Partial<ManagerOptions & SocketOptions>
   ) {
     const socket = io(url, {
       transports: options?.transports ?? ["websocket"],
       ...options,
     });
-    return new SocketIOClient({
+    return new SocketIOClient<T>({
       socket,
       handlers: this.handlers,
       ...options,
@@ -32,7 +35,7 @@ export class SocketIOClientManager {
    * @param method - 方法名
    * @param handler - 处理器
    */
-  register(method: string, handler: SocketIOHandler) {
+  register(method: string, handler: SocketIOHandler<T>) {
     this.handlers.set(method, handler);
   }
 

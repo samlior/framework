@@ -11,14 +11,14 @@ import { SocketIOServer, SocketIOServerOptions } from "./server";
  * @param hostname - 绑定的 ip
  * @returns http.Server 实例, SocketIOServer 实例以及中断器
  */
-export async function startup(
+export async function startup<T = any>(
   options: Omit<SocketIOServerOptions, "server">,
   port: number = 3000,
   hostname: string = "localhost"
 ) {
   const httpServer = http.createServer();
-  const socketIOServer = new Server(httpServer, {});
-  const server = new SocketIOServer({ server: socketIOServer, ...options });
+  const socketIOServer = new Server(httpServer);
+  const server = new SocketIOServer<T>({ server: socketIOServer, ...options });
   const terminator = createHttpTerminator({ server: httpServer });
   httpServer.listen(port, hostname);
   await new Promise<void>((resolve, reject) => {
@@ -50,8 +50,8 @@ export async function startup(
  * @param terminator - 中断器
  * @param duration - 超时时间
  */
-export async function shutdown(
-  server: SocketIOServer,
+export async function shutdown<T = any>(
+  server: SocketIOServer<T>,
   terminator: HttpTerminator,
   duration: number = 5000
 ) {

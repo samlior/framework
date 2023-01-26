@@ -13,17 +13,19 @@ export interface Socket {
   disconnect(flag?: boolean): this;
 }
 
-export type SocketIOHandleFunc = (
+export type SocketIOHandleFunc<T = any> = (
   params: any,
-  client: SocketIOClient
+  client: SocketIOClient<T>
 ) => ReturnTypeIs<any>;
 
-export interface ISocketIOHandler {
+export interface ISocketIOHandler<T = any> {
   parent?: Scheduler;
   limited?: boolean;
-  handle: SocketIOHandleFunc;
+  handle: SocketIOHandleFunc<T>;
 }
 
-export type SocketIOHandler = ISocketIOHandler | SocketIOHandleFunc;
+export type SocketIOHandler<T = any> =
+  | ISocketIOHandler<T>
+  | SocketIOHandleFunc<T>;
 
-export type SocketIOHanlders = Map<string, SocketIOHandler>;
+export type SocketIOHanlders<T = any> = Map<string, SocketIOHandler<T>>;

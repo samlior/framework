@@ -43,16 +43,16 @@ export class SocketIOHandlerResponse {
   }
 }
 
-export interface SocketIOClientOptions {
+export interface SocketIOClientOptions<T> {
   socket: Socket;
   maxTokens?: number;
   maxQueued?: number;
   limited?: Limited;
-  handlers?: SocketIOHanlders;
+  handlers?: SocketIOHanlders<T>;
   parent?: Scheduler;
 }
 
-export declare interface SocketIOClient {
+export declare interface SocketIOClient<T = any> {
   on(event: "connect", listener: () => void): this;
   on(event: "disconnect", listener: () => void): this;
 
@@ -60,12 +60,15 @@ export declare interface SocketIOClient {
   off(event: "disconnect", listener: () => void): this;
 }
 
-export class SocketIOClient extends Events {
+export class SocketIOClient<T = any> extends Events {
   readonly socket: Socket;
   readonly scheduler: Scheduler;
   readonly limited?: Limited;
-  readonly handlers: SocketIOHanlders;
+  readonly handlers: SocketIOHanlders<T>;
   readonly jsonrpc = new JSONRPC();
+
+  // 允许用户自定义的字段
+  userData?: T;
 
   constructor({
     socket,
@@ -74,7 +77,7 @@ export class SocketIOClient extends Events {
     maxTokens,
     maxQueued,
     limited,
-  }: SocketIOClientOptions) {
+  }: SocketIOClientOptions<T>) {
     super();
     this.socket = socket;
     this.scheduler = new Scheduler(parent);
@@ -83,7 +86,7 @@ export class SocketIOClient extends Events {
     } else if (maxTokens !== undefined && maxQueued !== undefined) {
       this.limited = new Limited(maxTokens, maxQueued);
     }
-    this.handlers = handlers ?? new Map<string, ISocketIOHandler>();
+    this.handlers = handlers ?? new Map<string, ISocketIOHandler<T>>();
     this.start();
     this.socket.on("connect", this.handleConnect);
     this.socket.on("disconnect", this.handleDisconnect);
@@ -147,7 +150,7 @@ export class SocketIOClient extends Events {
     }
     let limited: boolean;
     let scheduler: Scheduler;
-    let handle: SocketIOHandleFunc;
+    let handle: SocketIOHandleFunc<T>;
     if (typeof handler === "function") {
       limited = false;
       scheduler = new Scheduler(this.scheduler);
