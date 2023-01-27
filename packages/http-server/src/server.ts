@@ -46,17 +46,26 @@ export interface HTTPServerOptions {
   limited?: Limited;
   // 父级调度器
   parent?: Scheduler;
+  // 外部指定的方法
+  handlers?: Map<string, HTTPHanlder>;
 }
 
 export class HTTPServer {
   readonly scheduler: Scheduler;
   readonly limited?: Limited;
-  readonly handlers = new Map<string, HTTPHanlder>();
+  readonly handlers: Map<string, HTTPHanlder>;
 
   private _stopped: boolean = false;
 
-  constructor({ maxTokens, maxQueued, limited, parent }: HTTPServerOptions) {
+  constructor({
+    maxTokens,
+    maxQueued,
+    limited,
+    parent,
+    handlers,
+  }: HTTPServerOptions) {
     this.scheduler = new Scheduler(parent);
+    this.handlers = handlers ?? new Map<string, HTTPHanlder>();
     if (limited) {
       this.limited = limited;
     } else if (maxTokens !== undefined && maxQueued !== undefined) {

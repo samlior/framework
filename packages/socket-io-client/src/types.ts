@@ -27,5 +27,3 @@ export interface ISocketIOHandler<T = any> {
 export type SocketIOHandler<T = any> =
   | ISocketIOHandler<T>
   | SocketIOHandleFunc<T>;
-
-export type SocketIOHanlders<T = any> = Map<string, SocketIOHandler<T>>;

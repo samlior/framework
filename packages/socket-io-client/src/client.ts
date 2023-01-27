@@ -11,12 +11,7 @@ import {
   error,
   Events,
 } from "@samlior/utils";
-import {
-  Socket,
-  SocketIOHanlders,
-  SocketIOHandleFunc,
-  ISocketIOHandler,
-} from "./types";
+import { Socket, SocketIOHandleFunc, SocketIOHandler } from "./types";
 
 export class SocketIOHandlerResponse {
   notify?: {
@@ -48,7 +43,7 @@ export interface SocketIOClientOptions<T> {
   maxTokens?: number;
   maxQueued?: number;
   limited?: Limited;
-  handlers?: SocketIOHanlders<T>;
+  handlers?: Map<string, SocketIOHandler<T>>;
   parent?: Scheduler;
 }
 
@@ -64,7 +59,7 @@ export class SocketIOClient<T = any> extends Events {
   readonly socket: Socket;
   readonly scheduler: Scheduler;
   readonly limited?: Limited;
-  readonly handlers: SocketIOHanlders<T>;
+  readonly handlers: Map<string, SocketIOHandler<T>>;
   readonly jsonrpc = new JSONRPC();
 
   // 允许用户自定义的字段
@@ -86,7 +81,7 @@ export class SocketIOClient<T = any> extends Events {
     } else if (maxTokens !== undefined && maxQueued !== undefined) {
       this.limited = new Limited(maxTokens, maxQueued);
     }
-    this.handlers = handlers ?? new Map<string, ISocketIOHandler<T>>();
+    this.handlers = handlers ?? new Map<string, SocketIOHandler<T>>();
     this.start();
     this.socket.on("connect", this.handleConnect);
     this.socket.on("disconnect", this.handleDisconnect);

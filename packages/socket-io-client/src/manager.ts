@@ -1,12 +1,13 @@
 import { io, ManagerOptions, SocketOptions } from "socket.io-client";
-import { SocketIOHandler, SocketIOHanlders } from "./types";
+import { SocketIOHandler } from "./types";
 import { SocketIOClient, SocketIOClientOptions } from "./client";
 
 export class SocketIOClientManager<T = any> {
-  readonly handlers: SocketIOHanlders<T> = new Map<
-    string,
-    SocketIOHandler<T>
-  >();
+  readonly handlers: Map<string, SocketIOHandler<T>>;
+
+  constructor(handlers?: Map<string, SocketIOHandler<T>>) {
+    this.handlers = handlers ?? new Map<string, SocketIOHandler<T>>();
+  }
 
   /**
    * 链接服务器

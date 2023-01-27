@@ -12,7 +12,7 @@ import { SocketIOServer, SocketIOServerOptions } from "./server";
  * @returns http.Server 实例, SocketIOServer 实例以及中断器
  */
 export async function startup<T = any>(
-  options: Omit<SocketIOServerOptions, "server">,
+  options: Omit<SocketIOServerOptions<T>, "server">,
   port: number = 3000,
   hostname: string = "localhost"
 ) {

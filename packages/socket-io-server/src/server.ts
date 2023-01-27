@@ -1,15 +1,11 @@
 import Events from "events";
 import { Server, Socket } from "socket.io";
 import { Scheduler, Limited, warn } from "@samlior/utils";
-import {
-  SocketIOClient,
-  SocketIOHandler,
-  ISocketIOHandler,
-} from "@samlior/socket-io-client";
+import { SocketIOClient, SocketIOHandler } from "@samlior/socket-io-client";
 
 const defaultNamespace = "/";
 
-export interface SocketIOServerOptions {
+export interface SocketIOServerOptions<T> {
   // socketIO 服务实例
   server: Server;
   // 最大并发数量
@@ -22,6 +18,8 @@ export interface SocketIOServerOptions {
   namespace?: string;
   // 父级调度器
   parent?: Scheduler;
+  // 外部指定的方法
+  handlers?: Map<string, SocketIOHandler<T>>;
 }
 
 export declare interface SocketIOServer<T = any> {
@@ -37,7 +35,7 @@ export class SocketIOServer<T = any> extends Events {
   readonly scheduler: Scheduler;
   readonly server: Server;
   readonly limited?: Limited;
-  readonly handlers = new Map<string, SocketIOHandler<T>>();
+  readonly handlers: Map<string, SocketIOHandler<T>>;
   readonly clients = new Map<string, SocketIOClient<T>>();
 
   constructor({
@@ -47,10 +45,12 @@ export class SocketIOServer<T = any> extends Events {
     limited,
     namespace,
     parent,
-  }: SocketIOServerOptions) {
+    handlers,
+  }: SocketIOServerOptions<T>) {
     super();
     this.namespace = namespace ?? defaultNamespace;
     this.server = server;
+    this.handlers = handlers ?? new Map<string, SocketIOHandler<T>>();
     this.scheduler = new Scheduler(parent);
     if (limited) {
       this.limited = limited;
@@ -140,7 +140,7 @@ export class SocketIOServer<T = any> extends Events {
    * @param method - 方法名
    * @param handler - 处理器
    */
-  register(method: string, handler: ISocketIOHandler<T>) {
+  register(method: string, handler: SocketIOHandler<T>) {
     this.handlers.set(method, handler);
   }
 

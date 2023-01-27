@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import { ReturnTypeIs, toNoExcept, raceNoExcept } from "@samlior/utils";
+import { HTTPClient } from "@samlior/http-client";
 import { IHTTPHanlder, startup, shutdown } from "../src";
-import { HTTPClient } from "../../http-client/src";
 
 const port = 54321;
 const namespace = "/namespace";
