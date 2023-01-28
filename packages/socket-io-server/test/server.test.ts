@@ -77,6 +77,9 @@ describe("SocketIO Server", function () {
     server.server.of("/").on("connection", (socket) => {
       socket.disconnect(true);
     });
+
+    // 开始服务器
+    this.server.start();
   });
 
   afterEach(async function () {

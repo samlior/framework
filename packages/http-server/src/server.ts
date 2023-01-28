@@ -55,7 +55,7 @@ export class HTTPServer {
   readonly limited?: Limited;
   readonly handlers: Map<string, HTTPHanlder>;
 
-  private _stopped: boolean = false;
+  private _stopped: boolean = true;
 
   constructor({
     maxTokens,
@@ -180,7 +180,7 @@ export class HTTPServer {
         }
         request = _request;
       } catch (err) {
-        debug("HTTPServer::handle, invalid request:", err);
+        debug("HTTPServer::handle", "invalid request:", err);
         res.json(JSONRPC.formatJSONRPCError(err));
         return next();
       }
@@ -237,7 +237,7 @@ export class HTTPServer {
             // ignore disconnet error
             return;
           }
-          error("HTTPServer::handle, method:", method, "catch error:", err);
+          error("HTTPServer::handle", "method:", method, "catch error:", err);
           res.json(JSONRPC.formatJSONRPCError(err, id));
         })
         .finally(() => {

@@ -82,9 +82,11 @@ export class SocketIOClient<T = any> extends Events {
       this.limited = new Limited(maxTokens, maxQueued);
     }
     this.handlers = handlers ?? new Map<string, SocketIOHandler<T>>();
-    this.start();
     this.socket.on("connect", this.handleConnect);
     this.socket.on("disconnect", this.handleDisconnect);
+
+    // 客户端直接开始运行
+    this.start();
   }
 
   get id(): string {
@@ -114,13 +116,13 @@ export class SocketIOClient<T = any> extends Events {
       const [_type, _result] = JSONRPC.parse(data);
       if (_type === "response") {
         if (!this.jsonrpc.response(_result)) {
-          debug("SocketIOClient::handleJSONRPC, invalid response, ignore");
+          debug("SocketIOClient::handleJSONRPC", "invalid response, ignore");
         }
         return;
       }
       requestOrNotify = _result;
     } catch (err) {
-      debug("SocketIOClient::handleJSONRPC, invalid request:", err);
+      debug("SocketIOClient::handleJSONRPC", "invalid request:", err);
       this._jsonrpc(JSONRPC.formatJSONRPCError(err));
       return;
     }
@@ -136,7 +138,7 @@ export class SocketIOClient<T = any> extends Events {
     // 3. 获取对应的 handler
     const handler = this.handlers.get(method);
     if (handler === undefined) {
-      debug("SocketIOClient::handleJSONRPC, method not found:", method);
+      debug("SocketIOClient::handleJSONRPC", "method not found:", method);
       id !== undefined &&
         this._jsonrpc(
           JSONRPC.formatJSONRPCError(JSONRPCErrorCode.NotFound, id)
@@ -178,14 +180,14 @@ export class SocketIOClient<T = any> extends Events {
         if (response !== undefined) {
           if (id === undefined) {
             // 这是一个通知, 无法返回
-            warn("SocketIOClient::handleJSONRPC, cannot response a notify");
+            warn("SocketIOClient::handleJSONRPC", "cannot response a notify");
           } else {
             this._jsonrpc(JSONRPC.formatJSONRPCResult(id, response));
           }
         }
       })
       .catch((err) => {
-        error("SocketIOClient::handleJSONRPC, catch error:", err);
+        error("SocketIOClient::handleJSONRPC", "catch error:", err);
         id !== undefined && this._jsonrpc(JSONRPC.formatJSONRPCError(err, id));
       })
       .finally(() => {

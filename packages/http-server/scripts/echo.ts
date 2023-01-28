@@ -17,6 +17,7 @@ async function main() {
     54321
   );
   server.register("echo", new EchoHandler());
+  server.start();
   console.log("http echo server startup");
   let exiting = false;
   process.on("SIGINT", () => {

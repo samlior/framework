@@ -63,6 +63,9 @@ describe("HTTPServer", function () {
     // 注册 handler
     this.server.register("echo", new MockEchoHandler());
     this.server.register("longTime", new MockLongTimeHandler());
+
+    // 开启服务器
+    this.server.start();
   });
 
   afterEach(async function () {

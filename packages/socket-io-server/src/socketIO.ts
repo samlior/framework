@@ -62,7 +62,7 @@ export async function shutdown<T = any>(
     client.stop();
   }
   await timeout(server.wait(), duration).catch(() =>
-    warn("shutdown, wait timeout")
+    warn("shutdown", "wait timeout")
   );
   // 不要主动关闭客户端
   // 不然 socketIO 会发送关闭命令, 导致客户端不会重连
@@ -73,12 +73,12 @@ export async function shutdown<T = any>(
   await new Promise<void>((resolve) => {
     server.server.close((err) => {
       if (err) {
-        error("shutdown, catch error:", err);
+        error("shutdown", "catch error:", err);
       }
       resolve();
     });
   });
-  await terminator
-    .terminate()
-    .catch((err) => warn("shutdown, terminate catch error:", err));
+  await terminator.terminate().catch((err) => {
+    // ignore...
+  });
 }

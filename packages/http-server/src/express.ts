@@ -32,7 +32,7 @@ export async function startup(
     .use(server.handle())
     .use((err, req, res, next) => {
       // ignore errors
-      debug("startup, catch error:", err);
+      debug("startup", "catch error:", err);
       next();
     });
   const httpServer = await new Promise<http.Server>((resolve) => {
@@ -62,10 +62,10 @@ export async function shutdown(
   server.stop();
   // 等待所有请求处理完毕
   await timeout(server.wait(), duration).catch(() =>
-    warn("shutdown, wait timeout")
+    warn("shutdown", "wait timeout")
   );
   // 中断所有链接
   await terminator
     .terminate()
-    .catch((err) => warn("shutdown, terminate catch error:", err));
+    .catch((err) => warn("shutdown", "terminate catch error:", err));
 }

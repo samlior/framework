@@ -2,6 +2,9 @@ import { io, ManagerOptions, SocketOptions } from "socket.io-client";
 import { SocketIOHandler } from "./types";
 import { SocketIOClient, SocketIOClientOptions } from "./client";
 
+export type ConnectOptions<T> = Omit<SocketIOClientOptions<T>, "socket"> &
+  Partial<ManagerOptions & SocketOptions>;
+
 export class SocketIOClientManager<T = any> {
   readonly handlers: Map<string, SocketIOHandler<T>>;
 
@@ -15,11 +18,7 @@ export class SocketIOClientManager<T = any> {
    * @param options - 构造参数和 socket 参数
    * @returns 客户端实例
    */
-  async connect(
-    url: string,
-    options?: Omit<SocketIOClientOptions<T>, "socket"> &
-      Partial<ManagerOptions & SocketOptions>
-  ) {
+  async connect(url: string, options?: ConnectOptions<T>) {
     const socket = io(url, {
       transports: options?.transports ?? ["websocket"],
       ...options,

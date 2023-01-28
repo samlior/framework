@@ -17,6 +17,7 @@ async function main() {
     65432
   );
   server.register("echo", new EchoHandler());
+  server.start();
   console.log("socket.io echo server startup");
   let exiting = false;
   process.on("SIGINT", () => {

@@ -35,6 +35,9 @@ const { server, httpServer, terminator } = await startup(
 // register handler
 server.register("echo", new MockEchoHandler());
 
+// start
+server.start();
+
 process.on("SIGINT", () => {
   // this function will ensure that all executing requests are completed
   // and safely close all client connections

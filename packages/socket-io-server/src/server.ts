@@ -57,15 +57,15 @@ export class SocketIOServer<T = any> extends Events {
     } else if (maxTokens !== undefined && maxQueued !== undefined) {
       this.limited = new Limited(maxTokens, maxQueued);
     }
-    this.start();
   }
 
   // 处理每一个新链接的 socket
   private handle = (socket: Socket) => {
     const old = this.clients.get(socket.id);
     if (old) {
-      warn("SocketIOServer::handle, client already exists, id:", socket.id);
+      warn("SocketIOServer::handle", "client already exists, id:", socket.id);
       old.abort(new Error("repeat socket id"));
+      old.stop();
       old.close();
     }
 

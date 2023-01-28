@@ -101,13 +101,13 @@ export class SocketIOServerSide {
       const [_type, _result] = JSONRPC.parse(data);
       if (_type === "response") {
         if (!this.jsonrpc.response(_result)) {
-          debug("SocketIOServerSide::handle, invalid response, ignore");
+          debug("SocketIOServerSide::handle", "invalid response, ignore");
         }
         return;
       }
       requestOrNotify = _result;
     } catch (err) {
-      debug("SocketIOServerSide::handle, invalid request:", err);
+      debug("SocketIOServerSide::handle", "invalid request:", err);
       this._message(from, JSONRPC.formatJSONRPCError(err));
       return;
     }
@@ -116,7 +116,7 @@ export class SocketIOServerSide {
     const { id, method, params } = requestOrNotify;
     const handler = this.handlers.get(method);
     if (handler === undefined) {
-      debug("SocketIOServerSide::handle, method not found:", method);
+      debug("SocketIOServerSide::handle", "method not found:", method);
       id !== undefined &&
         this._message(
           from,
@@ -155,14 +155,14 @@ export class SocketIOServerSide {
         if (response !== undefined) {
           if (id === undefined) {
             // 这是一个通知, 无法返回
-            warn("SocketIOServerSide::handle, cannot response a notify");
+            warn("SocketIOServerSide::handle", "cannot response a notify");
           } else {
             this._message(from, JSONRPC.formatJSONRPCResult(id, response));
           }
         }
       })
       .catch((err) => {
-        error("SocketIOServerSide::handle, catch error:", err);
+        error("SocketIOServerSide::handle", "catch error:", err);
         id !== undefined &&
           this._message(from, JSONRPC.formatJSONRPCError(err, id));
       })
